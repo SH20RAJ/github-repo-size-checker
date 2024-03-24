@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repo Size Checker</title>
+    <!-- Include Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col justify-center items-center">
+    <div class="max-w-md w-full bg-white p-6 rounded-lg shadow-lg">
+        <h1 class="text-2xl font-bold mb-4">GitHub Repo Size Checker</h1>
+        <div class="mb-4">
+            <label for="repoUrl" class="block text-sm font-medium text-gray-700">GitHub Repository URL:</label>
+            <input type="text" id="repoUrl" placeholder="Enter GitHub repo URL" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+        <button onclick="getRepoSize()" class="w-full bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Get Repo Size
+        </button>
+
+        <div id="result" class="mt-4"></div>
+    </div>
+
+    <script>
+        async function getRepoSize() {
+            const repoUrlInput = document.getElementById('repoUrl');
+            const repoUrl = repoUrlInput.value.trim();
+
+            // Check if the input is a valid GitHub repository URL
+            const repoUrlPattern = /^(https?:\/\/)?(www\.)?github\.com\/([a-zA-Z0-9-]+)\/([a-zA-Z0-9-]+)\/?$/;
+            const match = repoUrl.match(repoUrlPattern);
+
+            if (!match) {
+                displayResult("Invalid GitHub repository URL. Please enter a valid URL.");
+                return;
+            }
+
+            const owner = match[3];
+            const repo = match[4];
+
+            try {
+                const size = await getRepoSizeFromAPI(owner, repo);
+                displayResult(`
+                    Total size of '${owner}/${repo}':<br>
+                    ${size} KB<br>
+                    ${(size / 1024).toFixed(2)} MB<br>
+                    ${(size / (1024 * 1024)).toFixed(2)} GB
+                `);
+            } catch (error) {
+                displayResult(`Error: ${error.message}`);
+            }
+        }
+
+        async function getRepoSizeFromAPI(owner, repo) {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch repository data: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data.size;
+        }
+
+        function displayResult(message) {
+            const resultContainer = document.getElementById('result');
+            resultContainer.innerHTML = message;
+        }
+    </script>
+</body>
+</html>
